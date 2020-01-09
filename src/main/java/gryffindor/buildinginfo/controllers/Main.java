@@ -86,7 +86,7 @@ import org.slf4j.LoggerFactory;
 public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
-
+	private String objectId;
 
     @RequestMapping("/healthcheck")
     public Map<String, Object> healthcheck(){
@@ -133,6 +133,56 @@ public class Main {
 
         return response;
     }
+
+	/**
+	 * Method : Post
+	 * Example json response
+	 {
+	 "area": 50
+	 }
+	 *
+	 *  URL: 127.0.0.1:8080/getArea[object_id]
+	 *
+	 **/
+
+	//	private String objectId;
+
+	@PostMapping("/getArea{objectId}")
+	public Map<String, Object> getAreaId(@RequestBody String json ) {
+		Map<String, Object> response = new HashMap<>();
+
+		// String x = objectId;
+		ArrayList<Building> buildings = null;
+		try {
+			buildings = JSONToBuildingParser.getBuildings(json);
+			logger.info("Building parsed from json");
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+
+		if(buildings == null) {
+			response.put("error", "error");
+
+		} else {
+//			Float sum = 1.0f;
+
+			Float sum = 1.0f;
+			if (objectId.compareTo("1") == 1) {
+				sum = 2.0f;
+			}
+
+			for(Building building : buildings) {
+//				building.
+//				sum += building.getArea();
+				logger.debug("Area sum changed to {}", sum);
+			}
+
+			response.put("area", sum);
+		}
+
+		return response;
+	}
+
     /**
 	* Method : Post
 	* Example json response
