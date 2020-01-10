@@ -102,27 +102,27 @@ public class Main {
 				avgLight += building.avgLight();
 				avgHeating += building.avgHeating();
 				continue;
-			} else	if (building.getId() == searchedId) {
-				sumArea = building.getArea();
-				sumVolume = building.getVolume();
-				avgLight = building.avgLight();
-				avgHeating = building.avgHeating();
+			} else if (building.getId() == searchedId) {
+				sumArea += building.getArea();
+				sumVolume += building.getVolume();
+				avgLight += building.avgLight();
+				avgHeating += building.avgHeating();
 				break;
 			} else {
 				for (Floor floor : building.getFloors()) {
 					if (floor.getId() == searchedId) {
-						sumArea += building.getArea();
-						sumVolume += building.getVolume();
-						avgLight += building.avgLight();
-						avgHeating += building.avgHeating();
+						sumArea += floor.getArea();
+						sumVolume += floor.getVolume();
+						avgLight += floor.avgLight();
+						avgHeating += floor.avgHeating();
 						break;
 					} else {
 						for (Room room : floor.getRooms()) {
 							if (room.getId() == searchedId) {
-								sumArea += building.getArea();
-								sumVolume += building.getVolume();
-								avgLight += building.avgLight();
-								avgHeating += building.avgHeating();
+								sumArea += room.getArea();
+								sumVolume += room.getVolume();
+								avgLight += room.avgLight();
+								avgHeating += room.avgHeating();
 								break;
 							}
 						}
@@ -153,73 +153,14 @@ public class Main {
     	"area": 500
      }
 	*
-	*  URL: 127.0.0.1:8080/getArea
+	*  URL: 127.0.0.1:8080/getArea?{location_id}
 	*
 	**/
     @PostMapping("/getArea")
     public Map<String, Object> getArea(@RequestParam(value = "id", required = false) int searchedId, @RequestBody String json ) {
-        Map<String, Object> response = new HashMap<>();
-
-        ArrayList<Building> buildings = null;
-        try {
-            buildings = JSONToBuildingParser.getBuildings(json);
-            logger.info("Building parsed from json");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        if(buildings == null) {
-            response.put("error", "error");
-
-        } else {
-            Float sum = 0.0f;
-            for(Building building : buildings) {
-				if (building.getId() == searchedId) {
-					sum += building.getArea();
-					break;
-				} else {
-					for (Floor floor : building.getFloors()) {
-						if (floor.getId() == searchedId) {
-							sum += floor.getArea();
-							break;
-						} else {
-							for (Room room : floor.getRooms()) {
-								if (room.getId() == searchedId) {
-									sum += room.getArea();
-									break;
-								}
-							}
-						}
-					}
-				}
-			}
-		if (sum == 0.0f) {
-			response.put("error", "Id does not exist");
-		}
-//                sum += building.getArea();
-		logger.debug("Area sum changed to {}", sum);
-		response.put("area", sum);
-        }
-
-        return response;
-    }
-
-	/**
-	 * Method : Post
-	 * Example json response
-	 {
-	 "area": 50
-	 }
-	 *
-	 *  URL: 127.0.0.1:8080/getArea/{object_id}
-	 *
-	 **/
-/*
-	@PostMapping("/getArea/{objectId}")
-	public Map<String, Object> getAreaId(@PathVariable int objectId, @RequestBody String json ) {
 		Map<String, Object> response = new HashMap<>();
 
-		ArrayList<Location> buildings = null;
+		ArrayList<Building> buildings = null;
 		try {
 			buildings = JSONToBuildingParser.getBuildings(json);
 			logger.info("Building parsed from json");
@@ -227,29 +168,26 @@ public class Main {
 			e.printStackTrace();
 		}
 
-		if(buildings == null) {
+		Float sum = 0.0f;
+		if (buildings == null) {
 			response.put("error", "error");
 
 		} else {
-//			Float sum = 1.0f;
+			ArrayList<Float> locationParameters = getParametersById(buildings, searchedId);
+			sum = locationParameters.get(0);
 
-			Float sum = 1.0f;
-			if (objectId == 1) {
-				sum = 2.0f;
+			if (sum == 0.0f) {
+				response.put("error", "Id does not exist");
 			}
 
-			for(Building building : buildings) {
-//				building.
-//				sum += building.getArea();
-				logger.debug("Area sum changed to {}", sum);
-			}
-
+			logger.debug("Area sum changed to {}", sum);
 			response.put("area", sum);
 		}
 
 		return response;
 	}
-*/
+
+
     /**
 	* Method : Post
 	* Example json response
@@ -257,11 +195,11 @@ public class Main {
     	"volume": 500
      }
 	*
-	*  URL: 127.0.0.1:8080/getVolume
+	*  URL: 127.0.0.1:8080/getVolume?{location_id}
 	*
 	**/
     @PostMapping("/getVolume")
-	public Map<String, Object> getVolume(@RequestBody String json){
+	public Map<String, Object> getVolume(@RequestParam(value = "id", required = false) int searchedId, @RequestBody String json){
 		Map<String, Object> response = new HashMap<>();
 
 		ArrayList<Building> buildings = null;
@@ -275,8 +213,11 @@ public class Main {
 		if(buildings == null) response.put("error", "error");
 		else{
 			Float sum = 0.0f;
-			for(Building building: buildings){
-				sum += building.getVolume();
+			ArrayList<Float> locationParameters = getParametersById(buildings, searchedId);
+			sum = locationParameters.get(1);
+
+			if (sum == 0.0f) {
+				response.put("error", "Id does not exist");
 			}
 			logger.debug("Volume: {}", sum);
 			response.put("volume", sum);
@@ -290,11 +231,11 @@ public class Main {
     	"light": 50
      }
 	*
-	* URL: 127.0.0.1:8080/avgLight
+	* URL: 127.0.0.1:8080/avgLight?{location_id}
 	*
 	**/
     @PostMapping("/avgLight")
-    public Map<String, Object> avgLight(@RequestBody String json ) {
+    public Map<String, Object> avgLight(@RequestParam(value = "id", required = false) int searchedId, @RequestBody String json ) {
         Map<String, Object> response = new HashMap<>();
 
         ArrayList<Building> buildings = null;
@@ -310,11 +251,13 @@ public class Main {
 
         } else {
             Float sum = 0.0f;
-            for(Building building : buildings) {
-                sum += building.avgLight();
-                logger.debug("Average light sum changed to {}", sum);
-            }
+			ArrayList<Float> locationParameters = getParametersById(buildings, searchedId);
+			sum = locationParameters.get(0);
 
+			if (sum == 0.0f) {
+				response.put("error", "Id does not exist");
+			}
+			logger.debug("Average light sum changed to {}", sum);
             response.put("light", sum);
         }
 
@@ -327,11 +270,11 @@ public class Main {
     	"heating": 50
      }
 	*
-	* URL: 127.0.0.1:8080/avgHeating
+	* URL: 127.0.0.1:8080/avgHeating?{location_id}
 	*
 	**/
     @PostMapping("/avgHeating")
-    public Map<String, Object> avgHeating(@RequestBody String json ) {
+    public Map<String, Object> avgHeating(@RequestParam(value = "id", required = false) int searchedId, @RequestBody String json ) {
         Map<String, Object> response = new HashMap<>();
 
         ArrayList<Building> buildings = null;
@@ -347,11 +290,14 @@ public class Main {
 
         } else {
             Float sum = 0.0f;
-            for(Building building : buildings) {
-                sum += building.avgHeating();
-                logger.debug("Average heating sum changed to {}", sum);
-            }
+			ArrayList<Float> locationParameters = getParametersById(buildings, searchedId);
+			sum = locationParameters.get(0);
 
+			if (sum == 0.0f) {
+				response.put("error", "Id does not exist");
+			}
+
+			logger.debug("Average heating sum changed to {}", sum);
             response.put("heating", sum);
         }
 
