@@ -1,12 +1,11 @@
 package gryffindor.buildinginfo.controllers;
 
-import gryffindor.buildinginfo.models.Building;
-import gryffindor.buildinginfo.models.JSONToBuildingParser;
-import gryffindor.buildinginfo.models.Room;
+import gryffindor.buildinginfo.models.*;
 import org.json.JSONException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -86,7 +85,58 @@ import org.slf4j.LoggerFactory;
 public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
-	private String objectId;
+
+	/**
+	 * Function getParametersById() searches locations for given id
+	 * For searched location it calculates all parameters
+	 * If given id equals 0 function returns summary parameters for all locations
+	 * @return list of location parameters (area, volume, avgLight, avgHeating
+	 */
+	public ArrayList<Float> getParametersById(ArrayList<Building> buildings, int searchedId) {
+
+		float sumArea = 0.0f, sumVolume = 0.0f, avgLight = 0.0f, avgHeating = 0.0f;
+		for(Building building : buildings) {
+			if (searchedId == 0) {
+				sumArea += building.getArea();
+				sumVolume += building.getVolume();
+				avgLight += building.avgLight();
+				avgHeating += building.avgHeating();
+				continue;
+			} else	if (building.getId() == searchedId) {
+				sumArea = building.getArea();
+				sumVolume = building.getVolume();
+				avgLight = building.avgLight();
+				avgHeating = building.avgHeating();
+				break;
+			} else {
+				for (Floor floor : building.getFloors()) {
+					if (floor.getId() == searchedId) {
+						sumArea += building.getArea();
+						sumVolume += building.getVolume();
+						avgLight += building.avgLight();
+						avgHeating += building.avgHeating();
+						break;
+					} else {
+						for (Room room : floor.getRooms()) {
+							if (room.getId() == searchedId) {
+								sumArea += building.getArea();
+								sumVolume += building.getVolume();
+								avgLight += building.avgLight();
+								avgHeating += building.avgHeating();
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		ArrayList<Float> parameters  = new ArrayList<>(
+				Arrays.asList(sumArea, sumVolume, avgLight, avgHeating)
+		);
+
+		return parameters;
+	}
 
     @RequestMapping("/healthcheck")
     public Map<String, Object> healthcheck(){
@@ -107,7 +157,7 @@ public class Main {
 	*
 	**/
     @PostMapping("/getArea")
-    public Map<String, Object> getArea(@RequestBody String json ) {
+    public Map<String, Object> getArea(@RequestParam(value = "id", required = false) int searchedId, @RequestBody String json ) {
         Map<String, Object> response = new HashMap<>();
 
         ArrayList<Building> buildings = null;
@@ -124,11 +174,31 @@ public class Main {
         } else {
             Float sum = 0.0f;
             for(Building building : buildings) {
-                sum += building.getArea();
-                logger.debug("Area sum changed to {}", sum);
-            }
-
-            response.put("area", sum);
+				if (building.getId() == searchedId) {
+					sum += building.getArea();
+					break;
+				} else {
+					for (Floor floor : building.getFloors()) {
+						if (floor.getId() == searchedId) {
+							sum += floor.getArea();
+							break;
+						} else {
+							for (Room room : floor.getRooms()) {
+								if (room.getId() == searchedId) {
+									sum += room.getArea();
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		if (sum == 0.0f) {
+			response.put("error", "Id does not exist");
+		}
+//                sum += building.getArea();
+		logger.debug("Area sum changed to {}", sum);
+		response.put("area", sum);
         }
 
         return response;
@@ -141,18 +211,15 @@ public class Main {
 	 "area": 50
 	 }
 	 *
-	 *  URL: 127.0.0.1:8080/getArea[object_id]
+	 *  URL: 127.0.0.1:8080/getArea/{object_id}
 	 *
 	 **/
-
-	//	private String objectId;
-
-	@PostMapping("/getArea{objectId}")
-	public Map<String, Object> getAreaId(@RequestBody String json ) {
+/*
+	@PostMapping("/getArea/{objectId}")
+	public Map<String, Object> getAreaId(@PathVariable int objectId, @RequestBody String json ) {
 		Map<String, Object> response = new HashMap<>();
 
-		// String x = objectId;
-		ArrayList<Building> buildings = null;
+		ArrayList<Location> buildings = null;
 		try {
 			buildings = JSONToBuildingParser.getBuildings(json);
 			logger.info("Building parsed from json");
@@ -167,7 +234,7 @@ public class Main {
 //			Float sum = 1.0f;
 
 			Float sum = 1.0f;
-			if (objectId.compareTo("1") == 1) {
+			if (objectId == 1) {
 				sum = 2.0f;
 			}
 
@@ -182,7 +249,7 @@ public class Main {
 
 		return response;
 	}
-
+*/
     /**
 	* Method : Post
 	* Example json response
